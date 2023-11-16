@@ -4,15 +4,14 @@ BrowsePanel = Addon:NewModule(CreateFrame('Frame'), 'BrowsePanel', 'AceEvent-3.0
     'AceBucket-3.0')
 
 function BrowsePanel:OnInitialize()
+    local playerRegion = GetPlayerRegion()
+
     local gameLocale = GetLocale()
     local lang
-	local shortlang
     if gameLocale == "zhTW" then
         lang = 'zhCN'
-		shortlang = 'TW'
     else
         lang = 'zhTW'
-		shortlang = 'CN'
     end
 
     local enabled = C_LFGList.GetLanguageSearchFilter();
@@ -466,10 +465,10 @@ function BrowsePanel:OnInitialize()
 
     local filters = {
         { key = 'LeaderScore', text = L['团长大秘境评分'], min = 0, max = 5000, step = 1 },
-        { key = 'ItemLevel',   text = L['装备等级'],          min = 0, max = 500,  step = 10 },
-        { key = 'BossKilled',  text = L['Boss击杀数量'],      min = 0, max = 15,   step = 1 },
-        { key = 'Age',         text = L['活动创建时长'],    min = 0, max = 1440, step = 10 },
-        { key = 'Members',     text = L['队伍人数'],          min = 0, max = 40,   step = 1 },
+        { key = 'ItemLevel', text = L['装备等级'], min = 0, max = 500, step = 10 },
+        { key = 'BossKilled', text = L['Boss击杀数量'], min = 0, max = 15, step = 1 },
+        { key = 'Age', text = L['活动创建时长'], min = 0, max = 1440, step = 10 },
+        { key = 'Members', text = L['队伍人数'], min = 0, max = 40, step = 1 },
     }
 
     local function RefreshFilter()
@@ -558,7 +557,7 @@ function BrowsePanel:OnInitialize()
             do
                 Shine:SetPoint('TOPLEFT', 5, -5)
                 Shine:SetPoint('BOTTOMRIGHT', -5, 5)
-               -- Shine:Start()
+                -- Shine:Start()
             end
             AdvButton.Shine = Shine
             AdvButton:SetScript('OnClick', function()
@@ -623,6 +622,14 @@ function BrowsePanel:OnInitialize()
     -- end)
     -- end
 
+    function setAutoInvite(checked)
+        if checked then
+            ConsoleExec("profanityFilter 1")
+        else
+            ConsoleExec("profanityFilter 0")
+        end
+        return checked
+    end
 
     local AutoJoinCheckBox = GUI:GetClass('CheckBox'):New(self)
     do
@@ -630,7 +637,9 @@ function BrowsePanel:OnInitialize()
         AutoJoinCheckBox:SetText(L['自动进组'])
         --AutoJoinCheckBox.tooltip(['自动同意来自集合石的邀请'])
         AutoJoinCheckBox:SetSize(24, 24)
+        AutoJoinCheckBox:SetChecked(setAutoInvite(not not Profile:GetSetting('AUTO_JOIN')))
         AutoJoinCheckBox:SetScript("OnClick", function()
+            Profile:SetSetting('AUTO_JOIN', AutoJoinCheckBox:GetChecked())
             NoticeBp()
         end)
         -- 2022-11-19 修改提示位置
@@ -647,19 +656,8 @@ function BrowsePanel:OnInitialize()
             --MEETINGSTONE_UI_E_POINTS.AutoJoinCheckBox = false
             logText('\124cFFFF0000关闭\124r' .. '自动进组')
         end
-		setAutoInvite(AutoJoinCheckBox:GetChecked())
+        setAutoInvite(AutoJoinCheckBox:GetChecked())
     end
-	
-	function setAutoInvite(checked) 
-		if checked then
-			ConsoleExec("portal "..shortlang)
-			ConsoleExec("profanityFilter 1")
-		else 
-			ConsoleExec("portal TW")
-			ConsoleExec("profanityFilter 0")
-		end
-		return checked
-	end
 
     LFDRoleCheckPopup:SetScript("OnShow", function()
         if AutoJoinCheckBox:GetChecked() then
@@ -674,6 +672,9 @@ function BrowsePanel:OnInitialize()
 
     LFGListInviteDialog:SetScript("OnShow", function(self)
         if AutoJoinCheckBox:GetChecked() then
+            ConsoleExec("profanityFilter 1")
+            ConsoleExec("portal CN")
+
             local _, status, _, _, role = C_LFGList.GetApplicationInfo(LFGListInviteDialog.resultID)
             if status == "invited" then
                 LFGListInviteDialog.AcceptButton:Click()
@@ -681,6 +682,8 @@ function BrowsePanel:OnInitialize()
             if status == "inviteaccepted" then
                 LFGListInviteDialog.AcknowledgeButton:Click()
             end
+
+            ConsoleExec("portal " .. playerRegion)
         end
     end)
 
@@ -691,7 +694,7 @@ function BrowsePanel:OnInitialize()
 
 
     --if (MEETINGSTONE_UI_E_POINTS ~= nil and MEETINGSTONE_UI_E_POINTS.AutoJoinCheckBox ~= nil) then
-        --AutoJoinCheckBox:SetChecked(MEETINGSTONE_UI_E_POINTS.AutoJoinCheckBox)
+    --AutoJoinCheckBox:SetChecked(MEETINGSTONE_UI_E_POINTS.AutoJoinCheckBox)
     --end
 
     local ActivityTotals = self:CreateFontString(nil, 'ARTWORK', 'GameFontHighlightRight')
